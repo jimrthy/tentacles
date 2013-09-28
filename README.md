@@ -1,5 +1,10 @@
 # An octocat is nothing without his tentacles
 
+Cloned from Raynes/tentacles on github. Because I need access to the experimental parts of
+their search API.
+
+TODO: Make sure to Pull Request this back upstream.
+
 Tentacles is a Clojure library for working with the Github v3 API. It supports the entire Github API.
 
 This library is the successor to my old [clj-github](https://github.com/Raynes/clj-github) library. clj-github will no longer be maintained.
