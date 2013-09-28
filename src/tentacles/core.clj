@@ -122,6 +122,7 @@
                               (let [new-req (update-req req (-> resp meta :links :next))]
                                 (lazy-cat resp (exec-request new-req)))
                               resp)))]
+       (clojure.pprint/pprint req)
        (exec-request req))))
 
 (defn raw-api-call

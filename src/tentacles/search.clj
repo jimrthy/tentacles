@@ -24,8 +24,34 @@
     (or (:repositories results)
         results)))
 
+(defn append-query-param [[base seen?] [v k sep]]
+  (if v
+    [(str base (when seen? sep) k v) true]
+    [base seen?]))
+
+(defn build-search-query-params [what
+                                 {:keys [topic in size forks created pushed language stars sort order]}]
+  (let [query-params (reduce append-query-param
+                             ;; I have serious doubts about the what parameter.
+                             ;; Oh well. Right now, I'm only interested in searching repositories
+                             ;; anyway.
+                             [(str "search/" what "?q=") false]
+                             ;; N.B. Order's important
+                             [[topic "" ""]
+                              [in "in:" "+"]
+                              [size "size:" "+"]
+                              [forks "forks:" "+"]
+                              [created "created" "+"]
+                              [pushed "pushed:" "+"]
+                              [language "language:" "+"]
+                              [stars "stars:" "+"]
+                              [sort "sort=" "&"]
+                              [ order "order=" "&"]])]
+    (first query-params)))
+
 (defn search3-repos
-  "Finds repositories by keyword. This is totally experimental.
+  "Finds repositories by keyword. This is totally experimental
+on github's end.
 Parameters:
 
 topic: what you're searching for
@@ -80,26 +106,14 @@ options is used in quite a few places. The main one I'm
 interested in at the moment is \"all_pages\" which, according
 to tentacle's docs, should return a lazy seq of everything.
 "
-  [topic {:keys [in size forks created pushed language stars sort order]}
+  [query-params
    & options]
   ;; This is pretty cheesy.
   ;; And mostly wrong. Really should be passing it into api-call as options
   ;; so it can handle the escaping.
   ;; Except that those options don't seem to look much like these at all.
   ;; TODO: This should almost definitely be more general
-  (let [request-path "/search/repositories?q=%s" 
-        request-path (if in
-                       (str request-path "+in:" in)
-                       request-path)
-
-        ;; etc
-        ;; Except...build that using reduce
-        request-path (if sort
-                       (str request-path "&sort=" sort)
-                       request-path)
-        request-path (if order
-                       (str request-path "&order=" order)
-                       request-path)
+  (let [request (build-search-query-params "repositories" query-params)
         ;; c.f. core/make-request
         ;; This is destructured as a :strs key named accept
         ;; According to github's specs, need to "provide a
@@ -108,9 +122,9 @@ to tentacle's docs, should return a lazy seq of everything.
         ;; "
         ;; This is my first guess at what that actually means.
         options (into options {"accept" "application/vnd.github.preview"})]
-    (let [results (api-call :get request-path [topic])]
-      (or (:repositories results)
-          results))))
+      (let [results (api-call :get request "" options)]
+        (or (:repositories results)
+            results))))
 
 (defn search-users
   "Find users by keyword."
